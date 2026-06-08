@@ -1,0 +1,68 @@
+[
+  {
+    "id": "sword_slash",
+    "name": "Sword Slash",
+    "type": "damage",
+    "range": 1,
+    "damage": 3,
+    "description": "Deals melee damage to one adjacent enemy.",
+    "initiallyUnlocked": true
+  },
+  {
+    "id": "qi_step",
+    "name": "Qi Step",
+    "type": "movement",
+    "movementBonus": 2,
+    "description": "Temporarily increases movement range before moving.",
+    "initiallyUnlocked": true
+  },
+  {
+    "id": "inner_guard",
+    "name": "Inner Guard",
+    "type": "guard",
+    "description": "Reduces incoming damage for one enemy turn.",
+    "initiallyUnlocked": true
+  },
+  {
+    "id": "crescent_cut",
+    "name": "Crescent Cut",
+    "type": "adjacent_area",
+    "damage": 3,
+    "description": "Damages all enemies in adjacent cells around the player.",
+    "initiallyUnlocked": false
+  },
+  {
+    "id": "piercing_thrust",
+    "name": "Piercing Thrust",
+    "type": "piercing",
+    "range": 1,
+    "damage": 2,
+    "defenceIgnore": 2,
+    "description": "Deals melee damage to one enemy and partially ignores defence.",
+    "initiallyUnlocked": false
+  },
+  {
+    "id": "flowing_counter",
+    "name": "Flowing Counter",
+    "type": "counter",
+    "description": "Enter a counter stance. If attacked next enemy turn, counterattack once.",
+    "initiallyUnlocked": false
+  },
+  {
+    "id": "shadow_step",
+    "name": "Shadow Step",
+    "type": "dash",
+    "range": 3,
+    "description": "Dash to a nearby empty cell, ignoring enemies and obstacles on the path.",
+    "initiallyUnlocked": false
+  },
+  {
+    "id": "dragon_palm",
+    "name": "Dragon Palm",
+    "type": "ranged_damage",
+    "range": 3,
+    "damage": 4,
+    "description": "Deals ranged qi damage to one enemy within 3 cells.",
+    "initiallyUnlocked": false
+  }
+]

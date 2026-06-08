@@ -1,0 +1,16 @@
+{
+  "width": 10,
+  "height": 10,
+  "cells": [
+    ["grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass"],
+    ["grass", "grass", "grass", "wall", "grass", "grass", "grass", "grass", "stone", "grass"],
+    ["grass", "grass", "grass", "wall", "grass", "grass", "grass", "grass", "stone", "grass"],
+    ["grass", "grass", "grass", "wall", "grass", "grass", "grass", "grass", "stone", "grass"],
+    ["grass", "grass", "grass", "wall", "grass", "grass", "grass", "grass", "grass", "grass"],
+    ["stone", "stone", "stone", "grass", "grass", "wall", "wall", "grass", "grass", "grass"],
+    ["grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass"],
+    ["grass", "grass", "grass", "grass", "grass", "stone", "grass", "grass", "grass", "grass"],
+    ["grass", "grass", "grass", "grass", "grass", "stone", "grass", "grass", "grass", "grass"],
+    ["grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass"]
+  ]
+}

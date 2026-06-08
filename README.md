@@ -1,53 +1,104 @@
-[![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/H6lPFq0J)
-# Computing 2 Coursework Submission.
-**CID**: [YOUR CID]
+# Grid Tactics: Computing 2 Coursework Submission
 
-This is the submission template for your Computing 2 Applications coursework submission.
+Grid Tactics is a simple 2D grid-based martial arts tactical roguelike prototype. It uses plain HTML, CSS, and JavaScript. The pure game rules are in `web-app/game.js`, while `web-app/main.js` only loads data, renders the page, and handles user input.
 
-## Checklist
-### Install dependencies locally
-This template relies on a a few packages from the Node Package Manager, npm.
-To install them run the following commands in the terminal.
-```properties
-npm install
+## How to Run
+
+Open `web-app/index.html` in a browser. If the browser blocks `fetch()` for local JSON files, run a small local server from the repository root and open the page through that server.
+
+```bash
+python3 -m http.server
 ```
-These won't be uploaded to your repository because of the `.gitignore`.
-I'll run the same commands when I download your repos.
 
-### Game Module – API
-*You will produce an API specification, i.e. a list of function names and their signatures, for a Javascript module that represents the state of your game and the operations you can perform on it that advances the game or provides information.*
+Then open `http://localhost:8000/web-app/`.
 
-- [ ] Include a `.js ` module file in `/web-app` containing the API using `jsdoc`.
-- [ ] Update `/jsdoc.json` to point to this module in `.source.include` (line 7)
-- [ ] Compile jsdoc using the run configuration `Generate Docs`
-- [ ] Check the generated docs have compiled correctly.
+## Game Concept
 
-### Game Module – Implementation
-*You will implement, in Javascript, the module you specified above. Such that your game can be simulated in code, e.g. in the debug console.*
+The player controls a martial arts disciple on a 10x10 board. Each player round allows one movement and one main action, so the player can move and still attack, or attack and then move. Enemies move toward the player on their turn and attack when adjacent. The player wins by defeating all enemies and loses when HP reaches zero.
 
-- [ ] The file above should be fully implemented.
+Player skills:
 
-### Unit Tests – Specification
-*For the Game module API you have produced, write a set of unit tests descriptions that specify the expected behaviour of one aspect of your API, e.g. you might pick the win condition, or how the state changes when a move is made.*
+- `Sword Slash`: melee damage skill.
+- `Qi Step`: temporarily increases movement range.
+- `Inner Guard`: reduces incoming damage for one enemy turn.
+- `Crescent Cut`: damages all adjacent enemies.
+- `Piercing Thrust`: melee damage that partially ignores defence.
+- `Flowing Counter`: counterattacks once if the player is attacked next enemy turn.
+- `Shadow Step`: dashes to a nearby empty cell while ignoring obstacles on the path.
+- `Dragon Palm`: ranged qi damage against one enemy within 3 cells.
 
-- [ ] Write unit test definitions in `/web-app/tests`.
-- [ ] Check the headings appear in the Testing sidebar.
+When an enemy is defeated, one random locked skill is learned automatically and a message such as `Dragon Palm learned.` is added to the battle log.
 
-### Unit Tests – Implementation
-*Implement in code the unit tests specified above.*
+## Data Files
 
-- [ ] Implement the tests above.
+The app loads data with `fetch()` from:
 
-### Web Application
-*Produce a web application that allows a user to interface with your game module.*
+- `web-app/assets/data/characters.json`
+- `web-app/assets/data/skills.json`
+- `web-app/assets/data/map1.json`
 
-- Implement in `/web-app`
-  - [ ] `index.html`
-  - [ ] `default.css`
-  - [ ] `main.js`
-  - [ ] Any other files you need to include.
+These JSON files are treated as exported spreadsheet data. They keep balancing values and map layout separate from the JavaScript logic, so placeholder graphics can later be replaced with image assets in `web-app/assets/characters`, `web-app/assets/tiles`, and `web-app/assets/ui`.
 
-### Finally
-- [ ] Push to GitHub.
-- [ ] Sync the changes.
-- [ ] Check submission on GitHub website.
+## Game Module API
+
+The pure game API is exported from `web-app/game.js` and is also exposed in the browser console as `window.Game`. The current browser game state is exposed as `window.gameState`.
+
+```js
+createInitialState(config)
+getCurrentTurn(gameState)
+getBoardSize(gameState)
+getCharacter(gameState, characterId)
+getPlayer(gameState)
+getEnemies(gameState)
+getCell(gameState, x, y)
+isInsideBoard(gameState, x, y)
+isCellBlocked(gameState, x, y)
+isCellOccupied(gameState, x, y)
+getDistance(a, b)
+getReachableCells(gameState, characterId)
+moveCharacter(gameState, characterId, targetX, targetY)
+attackCharacter(gameState, attackerId, targetId)
+useSkill(gameState, characterId, skillId, target)
+getUnlockedSkills(gameState)
+runEnemyTurn(gameState)
+endTurn(gameState)
+isGameOver(gameState)
+getWinner(gameState)
+```
+
+Most state-changing functions return a new game state. Invalid actions return the original state unchanged, which makes the module easier to test.
+
+## Unit Test Specification
+
+Movement tests:
+
+- Player can move to a reachable empty cell.
+- Player cannot move outside the board.
+- Player cannot move further than movement range.
+- Player cannot move onto a blocked tile.
+- Player cannot move onto an occupied cell.
+- A valid move updates the player's position.
+- An invalid move does not mutate the original state.
+- Player can still attack after moving once.
+- Player cannot move twice in one round.
+- Player can still move after attacking once.
+- Qi Step cannot be used after movement has already been spent.
+
+Combat tests:
+
+- Player can attack an adjacent enemy.
+- Player cannot attack an enemy outside attack range.
+- Damage should reduce HP.
+- Defence should reduce incoming damage.
+- Enemy is marked defeated when HP reaches zero.
+- Game is won when all enemies are defeated.
+- Game is lost when the player's HP reaches zero.
+
+## Running Tests
+
+```bash
+npm install
+npm test
+```
+
+Tests are implemented with Mocha in `web-app/tests/game.test.js`.

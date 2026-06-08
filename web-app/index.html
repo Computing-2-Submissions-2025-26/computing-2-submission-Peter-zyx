@@ -1,9 +1,84 @@
-<!-- In HTML Comments are written like this -->
-<!-- They can all be removed for your apps -->
-<!doctype html> <!-- This first line tells browsers to expect modern standard html 5 -->
-<html lang="en-gb"> <!-- This is indicates the page is written in British English, useful for accessibility -->
-<meta charset="utf-8"> <!-- This indicates how the file is encoded. utf-8 is standard -->
-<title>Your Web-app Title</title> <!-- All pages need a title, this will be displayed in the browser's title bar -->
-<link rel="stylesheet" href="default.css"> <!-- Import style sheet – default.css -->
-<link rel="icon" href="./assets/favicon.png"> <!-- Import 'Favorites Icon' – favicon.png -->
-<script type="module" src="main.js"></script> <!-- Load the main script. Must be type="module". Have only one of these -->
+<!doctype html>
+<html lang="en-gb">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Grid Tactics</title>
+    <link rel="stylesheet" href="default.css">
+    <link rel="icon" href="./assets/favicon.png">
+    <script type="module" src="main.js"></script>
+  </head>
+  <body>
+    <main class="game-page">
+      <!-- Top bar with title and turn buttons. -->
+      <header class="game-header">
+        <div>
+          <p class="label">Computing 2 tactical prototype</p>
+          <h1>Grid Tactics</h1>
+        </div>
+        <section class="turn-box" aria-label="Turn controls">
+          <strong id="turnText">Player turn</strong>
+          <button id="resetButton" type="button">Reset</button>
+          <button id="endTurnButton" type="button">End turn</button>
+        </section>
+      </header>
+
+      <p id="errorMessage" class="error-message hidden"></p>
+
+      <!-- Empty grid, JavaScript builds the cells. -->
+      <section class="game-layout">
+        <section>
+          <div class="grid-area">
+            <div id="gameGrid" class="game-grid" aria-label="10 by 10 tactical game grid"></div>
+            <!-- Win or lose banner over the board. -->
+            <section id="resultBanner" class="result-banner hidden" aria-live="polite">
+              <h2 id="resultTitle">Victory</h2>
+              <button id="replayButton" type="button">Replay</button>
+            </section>
+            <!-- New skill learned message. -->
+            <section id="skillLearnedBanner" class="skill-learned-banner hidden" aria-live="polite">
+              <p>Skill learned</p>
+              <h2 id="skillLearnedTitle"></h2>
+            </section>
+          </div>
+          <p id="hintText" class="hint">Double-click a highlighted square to move up to 4 cells. End your turn to let the enemy act.</p>
+        </section>
+
+        <!-- Side panel for info and buttons. -->
+        <aside class="side-panel" aria-label="Game information">
+          <section class="unit-panel">
+            <h2>Player 🧍</h2>
+            <div class="health-bar" aria-hidden="true">
+              <span id="playerHealthBar"></span>
+            </div>
+            <p id="playerHealthText">HP 10 / 10</p>
+          </section>
+
+          <section class="unit-panel">
+            <h2>Enemies 🥷</h2>
+            <div class="health-bar" aria-hidden="true">
+              <span id="enemyHealthBar"></span>
+            </div>
+            <p id="enemyHealthText">HP 18 / 18</p>
+          </section>
+
+          <section class="actions" aria-label="Player actions">
+            <button id="attackButton" type="button">⚔️ Sword Slash</button>
+            <button id="qiStepButton" type="button">👣 Qi Step</button>
+            <button id="guardButton" type="button">🛡️ Inner Guard</button>
+          </section>
+
+          <section>
+            <h2>Learned Skills</h2>
+            <div id="learnedSkillButtons" class="actions"></div>
+          </section>
+
+          <section>
+            <h2>Battle log</h2>
+            <ol id="battleLog" class="battle-log"></ol>
+          </section>
+        </aside>
+      </section>
+    </main>
+  </body>
+</html>

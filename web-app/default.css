@@ -1,0 +1,473 @@
+:root {
+  /* Main colour values. */
+  --background: #18231b;
+  --panel: #f3ead8;
+  --panel-border: #c9b58f;
+  --text: #1c241f;
+  --muted: #58645d;
+  --grass: #79aa62;
+  --stone: #929893;
+  --wall: #4b554c;
+  --reachable: #ffd761;
+  --player: #2f75d6;
+  --enemy: #c74848;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background: var(--background);
+  color: var(--text);
+  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  min-height: 100vh;
+}
+
+button {
+  background: #31553c;
+  border: 0;
+  border-radius: 6px;
+  color: white;
+  cursor: pointer;
+  font: inherit;
+  font-weight: bold;
+  min-height: 40px;
+  padding: 8px 12px;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.game-page {
+  margin: 0 auto;
+  max-width: 1240px;
+  padding: 24px;
+}
+
+.game-header,
+.side-panel {
+  background: var(--panel);
+  border: 3px solid var(--panel-border);
+  border-radius: 8px;
+}
+
+.game-header {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding: 16px;
+}
+
+.label {
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: bold;
+  letter-spacing: 0.04em;
+  margin: 0 0 4px;
+  text-transform: uppercase;
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+h1 {
+  font-size: 2rem;
+}
+
+h2 {
+  font-size: 1.1rem;
+  margin-bottom: 8px;
+}
+
+.turn-box {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+}
+
+.game-layout {
+  align-items: flex-start;
+  display: flex;
+  gap: 16px;
+}
+
+.grid-area {
+  position: relative;
+  width: min(72vw, 840px);
+}
+
+.game-grid {
+  aspect-ratio: 1;
+  background-color: #263429;
+  /* Full map picture under the grid. */
+  background-image: url("./assets/map/map1.png");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  border: 4px solid #0d130f;
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  width: 100%;
+}
+
+.cell {
+  align-items: center;
+  /* Transparent cells over the map image. */
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  font-size: 1.9rem;
+  justify-content: center;
+  position: relative;
+  user-select: none;
+}
+
+.cell.grass {
+  background: transparent;
+}
+
+.cell.stone {
+  background: transparent;
+}
+
+.cell.wall {
+  background: transparent;
+}
+
+.cell.reachable::after {
+  /* Yellow movement highlight. */
+  border: 3px solid var(--reachable);
+  content: "";
+  inset: 6px;
+  position: absolute;
+}
+
+.unit {
+  /* Base box for player and enemy. */
+  align-items: center;
+  border: 3px solid rgba(255, 255, 255, 0.75);
+  border-radius: 6px;
+  color: white;
+  display: flex;
+  height: 75%;
+  justify-content: center;
+  position: relative;
+  width: 75%;
+  z-index: 1;
+}
+
+.unit-image-token {
+  /* Transparent image character token. */
+  background: transparent;
+  border: 0;
+  height: 100%;
+  overflow: visible;
+  width: 100%;
+}
+
+.unit-sprite {
+  display: block;
+  /* Larger sprite inside the grid cell. */
+  height: 320%;
+  image-rendering: auto;
+  object-fit: contain;
+  pointer-events: none;
+  width: 320%;
+}
+
+.unit-moving {
+  animation: unit-slide 420ms ease-out both;
+}
+
+@keyframes unit-slide {
+  0% {
+    transform: translate(var(--move-x), var(--move-y));
+  }
+
+  100% {
+    transform: translate(0, 0);
+  }
+}
+
+.movement-trail {
+  /* Movement trail flash. */
+  animation: trail-pulse 520ms ease-out forwards;
+  border: 3px solid rgba(255, 236, 139, 0.9);
+  border-radius: 6px;
+  inset: 12px;
+  pointer-events: none;
+  position: absolute;
+  z-index: 2;
+}
+
+@keyframes trail-pulse {
+  0% {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+
+  35% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.18);
+  }
+}
+
+.unit-hp-bar {
+  /* Small HP bar on character token. */
+  background: rgba(55, 29, 29, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  border-radius: 999px;
+  bottom: -8px;
+  height: 7px;
+  left: 50%;
+  overflow: hidden;
+  position: absolute;
+  transform: translateX(-50%);
+  width: 92%;
+}
+
+.unit-hp-fill {
+  background: #52d273;
+  display: block;
+  height: 100%;
+  transition: width 0.2s ease;
+}
+
+.enemy-hp-bar {
+  /* Enemy HP above head. */
+  bottom: auto;
+  top: -8px;
+}
+
+.enemy-hp-fill {
+  background: #d94444;
+}
+
+.damage-popup {
+  /* Floating damage number. */
+  animation: damage-rise 850ms ease-out forwards;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 900;
+  left: 50%;
+  pointer-events: none;
+  position: absolute;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
+  top: 18%;
+  transform: translate(-50%, 0);
+  z-index: 3;
+}
+
+.enemy-damage {
+  color: #ffe36f;
+}
+
+.player-damage {
+  color: #ff8c7a;
+}
+
+@keyframes damage-rise {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 8px) scale(0.85);
+  }
+
+  18% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1.18);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -24px) scale(1);
+  }
+}
+
+.player {
+  background: var(--player);
+}
+
+.player.unit-image-token {
+  background: transparent;
+}
+
+.enemy {
+  background: var(--enemy);
+}
+
+.enemy.unit-image-token {
+  background: transparent;
+}
+
+.hint {
+  color: #f3ead8;
+  margin-top: 10px;
+}
+
+.error-message {
+  background: #ffe1dd;
+  border: 2px solid #923737;
+  border-radius: 8px;
+  color: #6e1f1f;
+  font-weight: bold;
+  margin-bottom: 16px;
+  padding: 12px;
+}
+
+.result-banner {
+  /* Victory / defeated overlay. */
+  align-items: center;
+  background: rgba(243, 234, 216, 0.94);
+  border: 4px solid #31553c;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  left: 50%;
+  padding: 24px 36px;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 5;
+}
+
+.result-banner.defeated {
+  border-color: #923737;
+}
+
+.result-banner h2 {
+  font-size: 2.4rem;
+  margin: 0;
+}
+
+.skill-learned-banner {
+  /* Skill learned feedback banner. */
+  animation: skill-banner 2200ms ease-out forwards;
+  background: rgba(255, 250, 240, 0.96);
+  border: 4px solid #c69b35;
+  border-radius: 8px;
+  left: 50%;
+  min-width: 260px;
+  padding: 18px 24px;
+  position: absolute;
+  text-align: center;
+  top: 16%;
+  transform: translateX(-50%);
+  z-index: 6;
+}
+
+.skill-learned-banner p {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: bold;
+  margin-bottom: 5px;
+  text-transform: uppercase;
+}
+
+.skill-learned-banner h2 {
+  font-size: 1.45rem;
+  margin: 0;
+}
+
+@keyframes skill-banner {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -10px) scale(0.95);
+  }
+
+  14%,
+  78% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -14px) scale(0.98);
+  }
+}
+
+.hidden {
+  display: none;
+}
+
+.side-panel {
+  /* Side area for health, actions and battle log. */
+  flex: 0 0 300px;
+  padding: 16px;
+}
+
+.unit-panel {
+  background: #fffaf0;
+  border: 2px solid #dac9a6;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  padding: 12px;
+}
+
+.health-bar {
+  background: #553633;
+  border-radius: 4px;
+  height: 12px;
+  margin-bottom: 6px;
+  overflow: hidden;
+}
+
+.health-bar span {
+  background: #4caf70;
+  display: block;
+  height: 100%;
+  transition: width 0.2s ease;
+}
+
+.actions {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 1fr;
+  margin: 14px 0;
+}
+
+.battle-log {
+  background: #fffaf0;
+  border: 2px solid #dac9a6;
+  border-radius: 8px;
+  color: var(--muted);
+  line-height: 1.4;
+  margin: 0;
+  min-height: 170px;
+  padding: 12px 12px 12px 32px;
+}
+
+.battle-log li + li {
+  margin-top: 6px;
+}
+
+@media (max-width: 850px) {
+  /* Small screen vertical layout. */
+  .game-header,
+  .game-layout {
+    flex-direction: column;
+  }
+
+  .grid-area,
+  .side-panel {
+    width: 100%;
+  }
+
+  .side-panel {
+    flex-basis: auto;
+  }
+}

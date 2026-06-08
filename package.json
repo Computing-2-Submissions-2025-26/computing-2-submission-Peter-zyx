@@ -2,8 +2,11 @@
   "name": "computing-2-submission",
   "type": "module",
   "version": "1.0.0",
-  "description": "",
-  "main": "web-app/Module.js",
+  "description": "Computing 2 grid tactics web app submission",
+  "main": "web-app/game.js",
+  "scripts": {
+    "test": "mocha"
+  },
   "author": "",
   "license": "ISC",
   "dependencies": {

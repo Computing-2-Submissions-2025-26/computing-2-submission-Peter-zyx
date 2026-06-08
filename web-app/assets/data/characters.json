@@ -1,0 +1,48 @@
+{
+  "player": {
+    "id": "player",
+    "name": "Wandering Disciple",
+    "icon": "🧍",
+    "image": "./assets/characters/player_xiake.png",
+    "maxHp": 18,
+    "attack": 5,
+    "defence": 2,
+    "movementRange": 4,
+    "attackRange": 1
+  },
+  "enemies": [
+    {
+      "id": "bandit_1",
+      "name": "Bandit 1",
+      "icon": "🥷",
+      "image": "./assets/characters/enemy_bandit.png",
+      "maxHp": 8,
+      "attack": 4,
+      "defence": 1,
+      "movementRange": 3,
+      "attackRange": 1
+    },
+    {
+      "id": "bandit_2",
+      "name": "Bandit 2",
+      "icon": "🥷",
+      "image": "./assets/characters/enemy_bandit.png",
+      "maxHp": 8,
+      "attack": 4,
+      "defence": 1,
+      "movementRange": 3,
+      "attackRange": 1
+    },
+    {
+      "id": "bandit_3",
+      "name": "Bandit 3",
+      "icon": "🥷",
+      "image": "./assets/characters/enemy_bandit.png",
+      "maxHp": 8,
+      "attack": 4,
+      "defence": 1,
+      "movementRange": 3,
+      "attackRange": 1
+    }
+  ]
+}
