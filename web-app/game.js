@@ -11,7 +11,7 @@ const PLAYER_TURN = "player";
 const ENEMY_TURN = "enemy";
 
 function copyState(gameState) {
-  // Copy state before changing rules data.
+  // Copy state before rule changes.
   return {
     ...gameState,
     board: {
@@ -39,7 +39,7 @@ function copyCharacter(character) {
 }
 
 function addLog(gameState, message) {
-  // Store battle messages in state.
+  // Battle messages saved in state.
   return {
     ...gameState,
     log: [...gameState.log, message]
@@ -54,7 +54,7 @@ function addLog(gameState, message) {
  */
 function createInitialState(config) {
   const cells = config.map.cells.map((row) => row.map((type) => ({ type })));
-  // Random spawn for web app, fixed spawn for tests.
+  // Random spawn in app, fixed spawn in tests.
   const spawnCells = chooseSpawnCells(cells, config.characters.enemies.length + 1, config.randomSpawns !== false);
   const playerStart = config.playerStart || spawnCells[0];
   const enemyStarts = config.enemyStarts || spawnCells.slice(1);
@@ -84,7 +84,7 @@ function createInitialState(config) {
 }
 
 function makeCharacter(data, position, team) {
-  // Convert JSON character data into match character.
+  // JSON character data to match character.
   return {
     id: data.id,
     name: data.name,
@@ -132,7 +132,7 @@ function chooseSpawnCells(cells, amount, randomSpawns) {
 function shuffle(items) {
   const result = [...items];
 
-  // Fisher-Yates shuffle for spawns and skill rewards.
+  // Shuffle for spawns and skill rewards.
   for (let index = result.length - 1; index > 0; index -= 1) {
     const swapIndex = Math.floor(Math.random() * (index + 1));
     [result[index], result[swapIndex]] = [result[swapIndex], result[index]];
@@ -265,7 +265,7 @@ function getReachableCells(gameState, characterId) {
   const visited = new Set([makePositionKey(character.position)]);
   const reachable = [];
 
-  // Breadth-first search up to movement range.
+  // BFS movement search.
   while (queue.length > 0) {
     const current = queue.shift();
 
@@ -307,7 +307,7 @@ function getEffectiveMovementRange(character) {
 function moveCharacter(gameState, characterId, targetX, targetY) {
   const character = gameState.characters[characterId];
 
-  // Stop defeated or already moved characters.
+  // No movement after defeated or moved.
   if (!character || character.defeated || character.hasMoved) {
     return gameState;
   }
@@ -338,7 +338,7 @@ function attackCharacter(gameState, attackerId, targetId) {
   const attacker = gameState.characters[attackerId];
   const target = gameState.characters[targetId];
 
-  // One attack/action per round.
+  // One action per round.
   if (!attacker || !target || attacker.defeated || target.defeated || attacker.hasActed) {
     return gameState;
   }
@@ -358,7 +358,7 @@ function attackCharacter(gameState, attackerId, targetId) {
 }
 
 function calculateDamage(attacker, target, defenceIgnore) {
-  // Damage = attack - defence, minimum 1.
+  // Attack minus defence, minimum 1.
   const guardBonus = target.statuses.guarded ? 2 : 0;
   const effectiveDefence = Math.max(0, target.defence - defenceIgnore);
   return Math.max(1, attacker.attack - effectiveDefence - guardBonus);
@@ -384,7 +384,7 @@ function applyDamage(gameState, targetId, damage) {
 }
 
 function finishAction(gameState, message) {
-  // Check victory and skill reward after action.
+  // Victory and reward check after action.
   return updateWinner(updateSkillReward(addLog(gameState, message)));
 }
 
@@ -401,7 +401,7 @@ function useSkill(gameState, characterId, skillId, target = {}) {
   const character = gameState.characters[characterId];
   const skill = gameState.skills[skillId];
 
-  // Block locked skills.
+  // Locked skill guard.
   if (!character || !skill || character.defeated || !gameState.unlockedSkillIds.includes(skillId)) {
     return gameState;
   }
@@ -454,7 +454,7 @@ function useSkill(gameState, characterId, skillId, target = {}) {
   }
 
   if (skill.type === "counter") {
-    // Flowing Counter waits for one enemy attack.
+    // Flowing Counter waits for enemy attack.
     if (character.hasActed) {
       return gameState;
     }
@@ -473,7 +473,7 @@ function useDamageSkill(gameState, characterId, skill, targetId) {
   const character = gameState.characters[characterId];
   const target = gameState.characters[targetId];
 
-  // Shared damage skill logic.
+  // Shared logic for damage skills.
   if (!target || target.defeated || character.hasActed || getDistance(character, target) > skill.range) {
     return gameState;
   }
@@ -496,7 +496,7 @@ function useAdjacentAreaSkill(gameState, characterId, skill) {
   }
 
   const targets = Object.values(gameState.characters).filter((target) => {
-    // Crescent Cut adjacent enemy targets.
+    // Adjacent targets for Crescent Cut.
     return target.team === ENEMY_TURN && !target.defeated && getDistance(character, target) === 1;
   });
 
@@ -518,7 +518,7 @@ function useAdjacentAreaSkill(gameState, characterId, skill) {
 function useDashSkill(gameState, characterId, skill, target) {
   const character = gameState.characters[characterId];
 
-  // Shadow Step ignores route, final square must be free.
+  // Shadow Step final square check.
   if (character.hasMoved || !target || !isInsideBoard(gameState, target.x, target.y)) {
     return gameState;
   }
@@ -552,7 +552,7 @@ function runEnemyTurn(gameState) {
   let nextState = copyState(gameState);
   nextState.turn = ENEMY_TURN;
 
-  // Enemies act one by one.
+  // Enemy actions one by one.
   getEnemies(nextState)
     .filter((enemy) => !enemy.defeated)
     .forEach((enemy) => {
@@ -590,7 +590,7 @@ function enemyAttackPlayer(gameState, enemyId) {
   const enemy = nextState.characters[enemyId];
 
   if (!isGameOver(nextState) && player.statuses.counterReady && !player.statuses.counterUsed && !enemy.defeated) {
-    // One counterattack after enemy hit.
+    // One counter after enemy hit.
     const damage = Math.max(1, player.attack - enemy.defence);
     applyDamage(nextState, enemyId, damage);
     player.statuses.counterUsed = true;
@@ -603,7 +603,7 @@ function enemyAttackPlayer(gameState, enemyId) {
 function moveEnemyTowardPlayer(gameState, enemyId) {
   const enemy = gameState.characters[enemyId];
   const player = gameState.characters[PLAYER_ID];
-  // Pathfind beside the player, not onto player.
+  // Pathfind beside the player.
   const path = findPathToAdjacentCell(gameState, enemy, player);
 
   if (path.length < 2) {

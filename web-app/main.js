@@ -1,13 +1,13 @@
 import * as Game from "./game.js";
 
-// Load exported game data before the match starts.
+// Data files loaded before the match starts.
 const DATA_FILES = {
   characters: "./assets/data/characters.json",
   skills: "./assets/data/skills.json",
   map: "./assets/data/map1.json"
 };
 
-// UI state only. Game rules stay in gameState and game.js.
+// Page state only, rules stay in game.js.
 let gameConfig = null;
 let gameState = null;
 let enemyTurnTimer = null;
@@ -23,7 +23,7 @@ window.Game = Game;
 startApp();
 
 function getPageElements() {
-  // Keep all page lookups in one place.
+  // All page elements collected here.
   return {
     grid: document.querySelector("#gameGrid"),
     resultBanner: document.querySelector("#resultBanner"),
@@ -50,7 +50,7 @@ function getPageElements() {
 
 async function startApp() {
   try {
-    // Connect buttons to game actions.
+    // Button clicks linked to game actions.
     page.resetButton.addEventListener("click", resetGame);
     page.replayButton.addEventListener("click", resetGame);
     page.endTurnButton.addEventListener("click", endPlayerTurn);
@@ -60,7 +60,7 @@ async function startApp() {
 
     gameConfig = await loadGameData();
     gameState = Game.createInitialState(gameConfig);
-    // Browser console copy for debugging.
+    // Debug copy in browser console.
     window.gameState = gameState;
     render();
   } catch (error) {
@@ -114,7 +114,7 @@ function render() {
 }
 
 function renderGrid() {
-  // Rebuild the 10x10 grid from current state.
+  // Build the 10x10 grid from current state.
   page.grid.innerHTML = "";
   const boardSize = Game.getBoardSize(gameState);
   const player = Game.getPlayer(gameState);
@@ -129,7 +129,7 @@ function renderGrid() {
       const unit = getUnitAt(x, y);
       const reachable = isReachableCell(reachableCells, x, y);
 
-      // Button cell for double-click movement.
+      // Grid button for double-click movement.
       cell.type = "button";
       cell.className = `cell ${tile.type}${reachable ? " reachable" : ""}`;
       cell.dataset.x = String(x);
@@ -147,7 +147,7 @@ function renderGrid() {
 }
 
 function getUnitAt(x, y) {
-  // Find a living unit on this square.
+  // Living unit on this square.
   const characters = [Game.getPlayer(gameState), ...Game.getEnemies(gameState)];
   return characters.find((character) => {
     return !character.defeated && character.position.x === x && character.position.y === y;
@@ -155,21 +155,21 @@ function getUnitAt(x, y) {
 }
 
 function isReachableCell(reachableCells, x, y) {
-  // Highlight only valid movement cells.
+  // Valid movement highlight.
   return !Game.isGameOver(gameState) && Game.getCurrentTurn(gameState) === "player"
     && !Game.getPlayer(gameState).hasMoved
     && reachableCells.some((cell) => cell.x === x && cell.y === y);
 }
 
 function makeUnitToken(unit) {
-  // Create the board token for one character.
+  // Board token for one character.
   const token = document.createElement("span");
   token.className = `unit ${unit.team}`;
   token.dataset.characterId = unit.id;
   token.title = unit.name;
 
   if (unit.image) {
-    // Use image first, otherwise use emoji/icon text.
+    // Image first, icon fallback.
     const image = document.createElement("img");
     image.className = "unit-sprite";
     image.src = unit.image;
@@ -182,7 +182,7 @@ function makeUnitToken(unit) {
 
   const movement = activeMovementAnimations.get(unit.id);
   if (movement) {
-    // Slide token from old cell to new cell.
+    // Slide from old cell to new cell.
     token.classList.add("unit-moving");
     token.style.setProperty("--move-x", `${movement.offsetX * 133.333}%`);
     token.style.setProperty("--move-y", `${movement.offsetY * 133.333}%`);
@@ -194,7 +194,7 @@ function makeUnitToken(unit) {
 }
 
 function makeUnitHealthBar(unit) {
-  // Shared HP bar for player and enemies.
+  // HP bar shared by player and enemies.
   const hpBar = document.createElement("span");
   const hpFill = document.createElement("span");
   const hpPercent = Math.max(0, (unit.hp / unit.maxHp) * 100);
@@ -208,7 +208,7 @@ function makeUnitHealthBar(unit) {
 }
 
 function renderInterface() {
-  // Update buttons, health bars, banners, skills and log.
+  // Refresh buttons, health bars, banners, skills and log.
   const winner = Game.getWinner(gameState);
   const player = Game.getPlayer(gameState);
   const enemies = Game.getEnemies(gameState);
@@ -258,7 +258,7 @@ function updateResultBanner(winner) {
 }
 
 function renderLearnedSkillButtons(playerCanAct) {
-  // Show only unlocked extra skills here.
+  // Extra unlocked skills only.
   const baseSkillIds = ["sword_slash", "qi_step", "inner_guard"];
   const learnedSkills = Game.getUnlockedSkills(gameState).filter((skill) => !baseSkillIds.includes(skill.id));
   page.learnedSkillButtons.innerHTML = "";
@@ -289,7 +289,7 @@ function getSkillButtonLabel(skill) {
 function canUseLearnedSkill(skill, playerCanAct) {
   const player = Game.getPlayer(gameState);
 
-  // Shadow Step checks movement, not action.
+  // Shadow Step uses movement.
   if (skill.type === "dash") {
     return Game.getCurrentTurn(gameState) === "player" && !player.hasMoved;
   }
@@ -319,7 +319,7 @@ function movePlayer(x, y) {
   }
 
   if (pendingDashSkillId !== null) {
-    // Next double click becomes Shadow Step target.
+    // Next double click is Shadow Step target.
     const nextState = Game.useSkill(gameState, "player", pendingDashSkillId, { x, y });
     pendingDashSkillId = null;
     updateState(nextState);
@@ -350,7 +350,7 @@ function useInnerGuard() {
 
 function useLearnedSkill(skill) {
   if (skill.type === "dash") {
-    // Wait for a grid target for dash.
+    // Wait for dash target.
     pendingDashSkillId = skill.id;
     render();
     return;
@@ -375,7 +375,7 @@ function endPlayerTurn() {
 
   pendingDashSkillId = null;
   updateState(Game.endTurn(gameState));
-  // Short pause before enemy actions.
+  // Small delay before enemy actions.
   enemyTurnTimer = window.setTimeout(() => {
     enemyTurnTimer = null;
     updateState(Game.runEnemyTurn(gameState));
@@ -383,7 +383,7 @@ function endPlayerTurn() {
 }
 
 function resetGame() {
-  // Clear delayed enemy action before reset.
+  // Clear delayed enemy action.
   if (enemyTurnTimer !== null) {
     window.clearTimeout(enemyTurnTimer);
     enemyTurnTimer = null;
@@ -395,7 +395,7 @@ function resetGame() {
 }
 
 function updateState(nextState) {
-  // Compare states for damage and movement effects.
+  // Old state vs new state for effects.
   const damagePopups = collectDamagePopups(gameState, nextState);
   const movementAnimations = collectMovementAnimations(gameState, nextState);
   const learnedSkillName = getLearnedSkillName(gameState, nextState);
@@ -412,7 +412,7 @@ function updateState(nextState) {
 }
 
 function getAdjacentEnemy() {
-  // Nearest enemy in normal attack range.
+  // Enemy in normal attack range.
   const player = Game.getPlayer(gameState);
   return Game.getEnemies(gameState).find((enemy) => {
     return !enemy.defeated && Game.getDistance(player, enemy) <= player.attackRange;
@@ -427,7 +427,7 @@ function getEnemiesInRange(range) {
 }
 
 function getDashCells(skill) {
-  // Shadow Step target cells, final cell must be empty.
+  // Shadow Step target cells.
   if (!skill) {
     return [];
   }
@@ -452,7 +452,7 @@ function getDashCells(skill) {
 }
 
 function collectDamagePopups(previousState, nextState) {
-  // Damage popup from HP difference.
+  // Damage popup from HP change.
   if (previousState === null || nextState === null) {
     return [];
   }
@@ -495,7 +495,7 @@ function showDamagePopups(popups) {
 }
 
 function collectMovementAnimations(previousState, nextState) {
-  // Movement animation from old and new position.
+  // Movement effect from position change.
   if (previousState === null || nextState === null) {
     return [];
   }
