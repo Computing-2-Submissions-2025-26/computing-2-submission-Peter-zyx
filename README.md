@@ -1,6 +1,6 @@
-# Grid Tactics: Computing 2 Coursework Submission
+# Wulin: Computing 2 Coursework Submission
 
-Grid Tactics is a simple 2D grid-based martial arts tactical roguelike prototype. It uses plain HTML, CSS, and JavaScript. The pure game rules are in `web-app/game.js`, while `web-app/main.js` only loads data, renders the page, and handles user input.
+Wulin is a simple 2D grid-based martial arts tactical roguelike prototype. It uses plain HTML, CSS, and JavaScript. The pure game rules are in `web-app/game.js`, while `web-app/main.js` only loads data, renders the page, and handles user input.
 
 ## How to Run
 
@@ -102,3 +102,5 @@ npm test
 ```
 
 Tests are implemented with Mocha in `web-app/tests/game.test.js`.
+
+Acknowledgement: ChatGPT is used to generate images for character and map.
