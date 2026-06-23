@@ -12,6 +12,7 @@ let gameConfig = null;
 let gameState = null;
 let enemyTurnTimer = null;
 let pendingDashSkillId = null;
+let pendingTargetSkillId = null;
 let skillBannerTimer = null;
 let activeMovementAnimations = new Map();
 
@@ -118,7 +119,11 @@ function renderGrid() {
   page.grid.innerHTML = "";
   const boardSize = Game.getBoardSize(gameState);
   const player = Game.getPlayer(gameState);
-  const reachableCells = pendingDashSkillId === null
+  const targetSkill = getUnlockedSkillById(pendingTargetSkillId);
+  const targetableEnemies = targetSkill ? getTargetableEnemies(targetSkill) : [];
+  const reachableCells = pendingTargetSkillId !== null
+    ? []
+    : pendingDashSkillId === null
     ? Game.getReachableCells(gameState, player.id)
     : getDashCells(Game.getUnlockedSkills(gameState).find((skill) => skill.id === pendingDashSkillId));
 
@@ -128,13 +133,15 @@ function renderGrid() {
       const tile = Game.getCell(gameState, x, y);
       const unit = getUnitAt(x, y);
       const reachable = isReachableCell(reachableCells, x, y);
+      const attackable = isAttackableCell(targetableEnemies, x, y);
 
       // Grid button for double-click movement.
       cell.type = "button";
-      cell.className = `cell ${tile.type}${reachable ? " reachable" : ""}`;
+      cell.className = `cell ${tile.type}${reachable ? " reachable" : ""}${attackable ? " attackable" : ""}`;
       cell.dataset.x = String(x);
       cell.dataset.y = String(y);
       cell.setAttribute("aria-label", `grid cell ${x + 1}, ${y + 1}`);
+      cell.addEventListener("click", () => chooseAttackTarget(x, y));
       cell.addEventListener("dblclick", () => movePlayer(x, y));
 
       if (unit !== null) {
@@ -159,6 +166,11 @@ function isReachableCell(reachableCells, x, y) {
   return !Game.isGameOver(gameState) && Game.getCurrentTurn(gameState) === "player"
     && !Game.getPlayer(gameState).hasMoved
     && reachableCells.some((cell) => cell.x === x && cell.y === y);
+}
+
+function isAttackableCell(targetableEnemies, x, y) {
+  // Red target highlight for attack selection.
+  return targetableEnemies.some((enemy) => enemy.position.x === x && enemy.position.y === y);
 }
 
 function makeUnitToken(unit) {
@@ -221,9 +233,7 @@ function renderInterface() {
   page.attackButton.disabled = !playerCanAct || getAdjacentEnemy() === null;
   page.qiStepButton.disabled = !playerCanBoostMove || player.statuses.movementBonus > 0;
   page.guardButton.disabled = !playerCanAct;
-  page.hintText.textContent = pendingDashSkillId === null
-    ? "Double-click a highlighted square to move up to 4 cells. End your turn to let the enemy act."
-    : "Shadow Step: double-click a highlighted square to dash there.";
+  page.hintText.textContent = getHintText();
 
   updateHealth(page.playerHealthBar, page.playerHealthText, player);
   updateEnemyHealth(enemies, livingEnemies);
@@ -234,6 +244,16 @@ function renderInterface() {
     .slice(-8)
     .map((message) => `<li>${message}</li>`)
     .join("");
+}
+
+function getHintText() {
+  if (pendingTargetSkillId !== null) {
+    return "Attack target: single-click a red highlighted enemy.";
+  }
+
+  return pendingDashSkillId === null
+    ? "Double-click a highlighted square to move up to 4 cells. End your turn to let the enemy act."
+    : "Shadow Step: double-click a highlighted square to dash there.";
 }
 
 function updateHealth(bar, text, character) {
@@ -318,6 +338,10 @@ function movePlayer(x, y) {
     return;
   }
 
+  if (pendingTargetSkillId !== null) {
+    return;
+  }
+
   if (pendingDashSkillId !== null) {
     // Next double click is Shadow Step target.
     const nextState = Game.useSkill(gameState, "player", pendingDashSkillId, { x, y });
@@ -331,13 +355,26 @@ function movePlayer(x, y) {
 }
 
 function useSwordSlash() {
-  const target = getAdjacentEnemy();
+  startTargetSelection("sword_slash");
+}
 
-  if (target === null) {
+function chooseAttackTarget(x, y) {
+  if (pendingTargetSkillId === null) {
     return;
   }
 
-  updateState(Game.useSkill(gameState, "player", "sword_slash", { characterId: target.id }));
+  const skill = getUnlockedSkillById(pendingTargetSkillId);
+  const target = getTargetableEnemies(skill).find((enemy) => {
+    return enemy.position.x === x && enemy.position.y === y;
+  });
+
+  if (target === undefined) {
+    return;
+  }
+
+  const skillId = pendingTargetSkillId;
+  pendingTargetSkillId = null;
+  updateState(Game.useSkill(gameState, "player", skillId, { characterId: target.id }));
 }
 
 function useQiStep() {
@@ -351,6 +388,7 @@ function useInnerGuard() {
 function useLearnedSkill(skill) {
   if (skill.type === "dash") {
     // Wait for dash target.
+    pendingTargetSkillId = null;
     pendingDashSkillId = skill.id;
     render();
     return;
@@ -361,11 +399,7 @@ function useLearnedSkill(skill) {
     return;
   }
 
-  const target = getEnemiesInRange(skill.range)[0];
-
-  if (target !== undefined) {
-    updateState(Game.useSkill(gameState, "player", skill.id, { characterId: target.id }));
-  }
+  startTargetSelection(skill.id);
 }
 
 function endPlayerTurn() {
@@ -374,6 +408,7 @@ function endPlayerTurn() {
   }
 
   pendingDashSkillId = null;
+  pendingTargetSkillId = null;
   updateState(Game.endTurn(gameState));
   // Small delay before enemy actions.
   enemyTurnTimer = window.setTimeout(() => {
@@ -390,6 +425,7 @@ function resetGame() {
   }
 
   pendingDashSkillId = null;
+  pendingTargetSkillId = null;
   hideSkillLearnedBanner();
   updateState(Game.createInitialState(gameConfig));
 }
@@ -417,6 +453,25 @@ function getAdjacentEnemy() {
   return Game.getEnemies(gameState).find((enemy) => {
     return !enemy.defeated && Game.getDistance(player, enemy) <= player.attackRange;
   }) || null;
+}
+
+function getUnlockedSkillById(skillId) {
+  return Game.getUnlockedSkills(gameState).find((skill) => skill.id === skillId);
+}
+
+function getTargetableEnemies(skill) {
+  if (!skill) {
+    return [];
+  }
+
+  return getEnemiesInRange(skill.range);
+}
+
+function startTargetSelection(skillId) {
+  // Single target skills wait for player to click an enemy.
+  pendingDashSkillId = null;
+  pendingTargetSkillId = skillId;
+  render();
 }
 
 function getEnemiesInRange(range) {

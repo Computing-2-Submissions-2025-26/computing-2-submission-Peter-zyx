@@ -150,6 +150,18 @@ h2 {
   position: absolute;
 }
 
+.cell.attackable::after {
+  /* Red attack target highlight. */
+  border: 3px solid #ff5b5b;
+  content: "";
+  inset: 6px;
+  position: absolute;
+}
+
+.cell.attackable {
+  cursor: crosshair;
+}
+
 .unit {
   /* Player and enemy base box. */
   align-items: center;

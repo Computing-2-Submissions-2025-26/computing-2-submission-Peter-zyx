@@ -43,28 +43,28 @@ These JSON files are treated as exported spreadsheet data. They keep balancing v
 
 The pure game API is exported from `web-app/game.js` and is also exposed in the browser console as `window.Game`. The current browser game state is exposed as `window.gameState`.
 
-```js
-createInitialState(config)
-getCurrentTurn(gameState)
-getBoardSize(gameState)
-getCharacter(gameState, characterId)
-getPlayer(gameState)
-getEnemies(gameState)
-getCell(gameState, x, y)
-isInsideBoard(gameState, x, y)
-isCellBlocked(gameState, x, y)
-isCellOccupied(gameState, x, y)
-getDistance(a, b)
-getReachableCells(gameState, characterId)
-moveCharacter(gameState, characterId, targetX, targetY)
-attackCharacter(gameState, attackerId, targetId)
-useSkill(gameState, characterId, skillId, target)
-getUnlockedSkills(gameState)
-runEnemyTurn(gameState)
-endTurn(gameState)
-isGameOver(gameState)
-getWinner(gameState)
-```
+| Function | Returns | Purpose |
+| --- | --- | --- |
+| `createInitialState(config)` | `object` | Creates a new game state from character, skill, and map data. |
+| `getCurrentTurn(gameState)` | `string` | Returns whether it is the player turn or enemy turn. |
+| `getBoardSize(gameState)` | `object` | Returns the board width and height. |
+| `getCharacter(gameState, characterId)` | `object` or `undefined` | Returns one character by id. |
+| `getPlayer(gameState)` | `object` | Returns the player character. |
+| `getEnemies(gameState)` | `object[]` | Returns all enemy characters. |
+| `getCell(gameState, x, y)` | `object` or `undefined` | Returns tile data for one board cell. |
+| `isInsideBoard(gameState, x, y)` | `boolean` | Checks whether a position is inside the board. |
+| `isCellBlocked(gameState, x, y)` | `boolean` | Checks whether a cell blocks movement. |
+| `isCellOccupied(gameState, x, y)` | `boolean` | Checks whether a living character is on a cell. |
+| `getDistance(a, b)` | `number` | Returns Manhattan distance between two positions or characters. |
+| `getReachableCells(gameState, characterId)` | `object[]` | Returns empty cells that a character can move to this turn. |
+| `moveCharacter(gameState, characterId, targetX, targetY)` | `object` | Moves a character if the target cell is reachable. |
+| `attackCharacter(gameState, attackerId, targetId)` | `object` | Attacks a target if it is in range and the attacker can act. |
+| `useSkill(gameState, characterId, skillId, target)` | `object` | Applies a skill effect such as damage, guard, counter, or dash. |
+| `getUnlockedSkills(gameState)` | `object[]` | Returns skills currently available to the player. |
+| `runEnemyTurn(gameState)` | `object` | Resolves enemy movement and attacks, then returns to player turn if the game continues. |
+| `endTurn(gameState)` | `object` | Changes the current turn. |
+| `isGameOver(gameState)` | `boolean` | Checks whether either side has won. |
+| `getWinner(gameState)` | `string` or `null` | Returns `player`, `enemy`, or `null` if the game is still running. |
 
 Most state-changing functions return a new game state. Invalid actions return the original state unchanged, which makes the module easier to test.
 
@@ -93,6 +93,16 @@ Combat tests:
 - Enemy is marked defeated when HP reaches zero.
 - Game is won when all enemies are defeated.
 - Game is lost when the player's HP reaches zero.
+
+Skill tests:
+
+- Defeating an enemy automatically unlocks one locked skill.
+- Learning a skill adds a battle log message.
+- Defeating the last enemy wins without learning a final skill.
+- Crescent Cut damages all adjacent enemies.
+- Shadow Step can dash past a blocked path to an empty nearby cell.
+- Flowing Counter counterattacks once when the player is attacked.
+- Dragon Palm can damage one enemy within three cells.
 
 ## Running Tests
 
