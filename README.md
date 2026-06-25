@@ -14,7 +14,7 @@ Then open `http://localhost:8000/web-app/`.
 
 ## Game Concept
 
-The player controls a martial arts disciple on a 10x10 board. Each player round allows one movement and one main action, so the player can move and still attack, or attack and then move. Enemies move toward the player on their turn and attack when adjacent. The player wins by defeating all enemies and loses when HP reaches zero.
+The player controls a martial arts disciple on a 10x10 board. Each player round allows one movement and one main action. The player can move first and then attack, but cannot attack first and then move. Water and mountain cells block movement. Enemies move toward the player on their turn and attack when adjacent. The player wins by defeating all enemies and loses when HP reaches zero.
 
 Player skills:
 
@@ -26,6 +26,9 @@ Player skills:
 - `Flowing Counter`: counterattacks once if the player is attacked next enemy turn.
 - `Shadow Step`: dashes to a nearby empty cell while ignoring obstacles on the path.
 - `Dragon Palm`: ranged qi damage against one enemy within 3 cells.
+- `Golden Bell`: completely blocks the next damage taken.
+- `Iron Sand Palm`: melee damage that pushes the target back one cell.
+- `Soul Seizing`: makes the target's next attack hit its nearest living team mate.
 
 When an enemy is defeated, one random locked skill is learned automatically and a message such as `Dragon Palm learned.` is added to the battle log.
 
@@ -76,12 +79,13 @@ Movement tests:
 - Player cannot move outside the board.
 - Player cannot move further than movement range.
 - Player cannot move onto a blocked tile.
+- Player cannot move onto a water tile.
 - Player cannot move onto an occupied cell.
 - A valid move updates the player's position.
 - An invalid move does not mutate the original state.
 - Player can still attack after moving once.
 - Player cannot move twice in one round.
-- Player can still move after attacking once.
+- Player cannot move after attacking once.
 - Qi Step cannot be used after movement has already been spent.
 
 Combat tests:
@@ -103,6 +107,9 @@ Skill tests:
 - Shadow Step can dash past a blocked path to an empty nearby cell.
 - Flowing Counter counterattacks once when the player is attacked.
 - Dragon Palm can damage one enemy within three cells.
+- Golden Bell blocks the next damage taken.
+- Iron Sand Palm damages and pushes an enemy back one cell.
+- Soul Seizing makes an enemy attack its nearest living team mate next time.
 
 ## Running Tests
 

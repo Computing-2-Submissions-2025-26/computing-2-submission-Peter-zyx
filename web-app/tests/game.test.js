@@ -22,6 +22,10 @@ function makeTestConfig(overrides = {}) {
     cells[overrides.wall.y][overrides.wall.x] = "wall";
   }
 
+  if (overrides.water) {
+    cells[overrides.water.y][overrides.water.x] = "stone";
+  }
+
   return {
     randomSpawns: false,
     playerStart: overrides.playerStart || { x: 0, y: 0 },
@@ -100,6 +104,31 @@ const unlockableSkills = [
     damage: 4,
     description: "Ranged qi damage.",
     initiallyUnlocked: false
+  },
+  {
+    id: "golden_bell",
+    name: "Golden Bell",
+    type: "invulnerable",
+    description: "Block next damage.",
+    initiallyUnlocked: false
+  },
+  {
+    id: "iron_sand_palm",
+    name: "Iron Sand Palm",
+    type: "knockback",
+    range: 1,
+    damage: 2,
+    knockback: 1,
+    description: "Damage and push target.",
+    initiallyUnlocked: false
+  },
+  {
+    id: "soul_seizing",
+    name: "Soul Seizing",
+    type: "confuse",
+    range: 3,
+    description: "Make target attack a team mate.",
+    initiallyUnlocked: false
   }
 ];
 
@@ -131,6 +160,13 @@ describe("movement system", () => {
     const nextState = moveCharacter(state, "player", 1, 0);
 
     assert.deepEqual(getPlayer(nextState).position, { x: 0, y: 0 }, "player should not move onto wall");
+  });
+
+  it("player cannot move onto a water tile", () => {
+    const state = createInitialState(makeTestConfig({ water: { x: 1, y: 0 } }));
+    const nextState = moveCharacter(state, "player", 1, 0);
+
+    assert.deepEqual(getPlayer(nextState).position, { x: 0, y: 0 }, "player should not move onto water");
   });
 
   it("player cannot move onto an occupied cell", () => {
@@ -175,12 +211,13 @@ describe("movement system", () => {
     assert.deepEqual(getReachableCells(movedState, "player"), [], "player should have no reachable cells after moving");
   });
 
-  it("player can still move after attacking once", () => {
+  it("player cannot move after attacking once", () => {
     const state = createInitialState(makeTestConfig({ enemyStarts: [{ x: 1, y: 0 }] }));
     const attackedState = attackCharacter(state, "player", "enemy_1");
     const movedState = moveCharacter(attackedState, "player", 0, 1);
 
-    assert.deepEqual(getPlayer(movedState).position, { x: 0, y: 1 }, "player should still move after spending action");
+    assert.equal(movedState, attackedState, "player should not move after spending action");
+    assert.deepEqual(getPlayer(movedState).position, { x: 0, y: 0 }, "player position should stay after attacking first");
   });
 
   it("Qi Step cannot be used after movement has already been spent", () => {
@@ -290,6 +327,64 @@ describe("skill system", () => {
     assert.ok(
       getCharacter(nextState, "enemy_1").hp < getCharacter(state, "enemy_1").hp,
       "Dragon Palm should damage enemy within range"
+    );
+  });
+
+  it("Golden Bell blocks the next damage taken", () => {
+    const state = createInitialState(makeTestConfig({
+      enemyStarts: [{ x: 1, y: 0 }],
+      skills: [{ ...unlockableSkills[5], initiallyUnlocked: true }]
+    }));
+    const guardedState = useSkill(state, "player", "golden_bell");
+    const attackedState = attackCharacter(guardedState, "enemy_1", "player");
+
+    assert.equal(getPlayer(attackedState).hp, getPlayer(guardedState).hp, "Golden Bell should block the next damage");
+    assert.equal(getPlayer(attackedState).statuses.invulnerable, false, "Golden Bell should be used up after blocking");
+  });
+
+  it("Iron Sand Palm damages and pushes an enemy back one cell", () => {
+    const state = createInitialState(makeTestConfig({
+      enemyStarts: [{ x: 1, y: 0 }],
+      skills: [{ ...unlockableSkills[6], initiallyUnlocked: true }]
+    }));
+    const nextState = useSkill(state, "player", "iron_sand_palm", { characterId: "enemy_1" });
+
+    assert.ok(
+      getCharacter(nextState, "enemy_1").hp < getCharacter(state, "enemy_1").hp,
+      "Iron Sand Palm should damage the target"
+    );
+    assert.deepEqual(
+      getCharacter(nextState, "enemy_1").position,
+      { x: 2, y: 0 },
+      "Iron Sand Palm should push the enemy one cell away"
+    );
+  });
+
+  it("Soul Seizing makes an enemy attack a team mate next time", () => {
+    const state = createInitialState(makeTestConfig({
+      enemyStarts: [{ x: 1, y: 0 }, { x: 2, y: 0 }],
+      skills: [{ ...unlockableSkills[7], initiallyUnlocked: true }]
+    }));
+    const confusedState = useSkill(state, "player", "soul_seizing", { characterId: "enemy_1" });
+    const enemyTurnState = runEnemyTurn(confusedState);
+
+    assert.ok(
+      getCharacter(enemyTurnState, "enemy_2").hp < getCharacter(confusedState, "enemy_2").hp,
+      "Soul Seizing should make the confused enemy damage a team mate"
+    );
+  });
+
+  it("Soul Seizing can hit the nearest team mate even if not adjacent", () => {
+    const state = createInitialState(makeTestConfig({
+      enemyStarts: [{ x: 1, y: 0 }, { x: 4, y: 0 }],
+      skills: [{ ...unlockableSkills[7], initiallyUnlocked: true }]
+    }));
+    const confusedState = useSkill(state, "player", "soul_seizing", { characterId: "enemy_1" });
+    const enemyTurnState = runEnemyTurn(confusedState);
+
+    assert.ok(
+      getCharacter(enemyTurnState, "enemy_2").hp < getCharacter(confusedState, "enemy_2").hp,
+      "Soul Seizing should damage the nearest team mate even outside normal attack range"
     );
   });
 });

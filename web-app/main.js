@@ -165,6 +165,7 @@ function isReachableCell(reachableCells, x, y) {
   // Valid movement highlight.
   return !Game.isGameOver(gameState) && Game.getCurrentTurn(gameState) === "player"
     && !Game.getPlayer(gameState).hasMoved
+    && !Game.getPlayer(gameState).hasActed
     && reachableCells.some((cell) => cell.x === x && cell.y === y);
 }
 
@@ -300,7 +301,10 @@ function getSkillButtonLabel(skill) {
     piercing_thrust: "🗡️ Piercing Thrust",
     flowing_counter: "↩️ Flowing Counter",
     shadow_step: "🌑 Shadow Step",
-    dragon_palm: "🐉 Dragon Palm"
+    dragon_palm: "🐉 Dragon Palm",
+    golden_bell: "🔔 Golden Bell",
+    iron_sand_palm: "✋ Iron Sand Palm",
+    soul_seizing: "👁️ Soul Seizing"
   };
 
   return labels[skill.id] || skill.name;
@@ -311,7 +315,7 @@ function canUseLearnedSkill(skill, playerCanAct) {
 
   // Shadow Step uses movement.
   if (skill.type === "dash") {
-    return Game.getCurrentTurn(gameState) === "player" && !player.hasMoved;
+    return Game.getCurrentTurn(gameState) === "player" && !player.hasMoved && !player.hasActed;
   }
 
   if (!playerCanAct) {
@@ -327,6 +331,14 @@ function canUseLearnedSkill(skill, playerCanAct) {
   }
 
   if (skill.type === "ranged_damage") {
+    return getEnemiesInRange(skill.range).length > 0;
+  }
+
+  if (skill.type === "knockback") {
+    return getEnemiesInRange(skill.range).length > 0;
+  }
+
+  if (skill.type === "confuse") {
     return getEnemiesInRange(skill.range).length > 0;
   }
 
@@ -394,7 +406,7 @@ function useLearnedSkill(skill) {
     return;
   }
 
-  if (skill.type === "adjacent_area" || skill.type === "counter") {
+  if (skill.type === "adjacent_area" || skill.type === "counter" || skill.type === "invulnerable") {
     updateState(Game.useSkill(gameState, "player", skill.id));
     return;
   }

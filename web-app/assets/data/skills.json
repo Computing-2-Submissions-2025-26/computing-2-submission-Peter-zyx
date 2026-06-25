@@ -64,5 +64,30 @@
     "damage": 4,
     "description": "Deals ranged qi damage to one enemy within 3 cells.",
     "initiallyUnlocked": false
+  },
+  {
+    "id": "golden_bell",
+    "name": "Golden Bell",
+    "type": "invulnerable",
+    "description": "Completely blocks the next damage taken.",
+    "initiallyUnlocked": false
+  },
+  {
+    "id": "iron_sand_palm",
+    "name": "Iron Sand Palm",
+    "type": "knockback",
+    "range": 1,
+    "damage": 2,
+    "knockback": 1,
+    "description": "Deals melee damage and pushes the target back one cell.",
+    "initiallyUnlocked": false
+  },
+  {
+    "id": "soul_seizing",
+    "name": "Soul Seizing",
+    "type": "confuse",
+    "range": 3,
+    "description": "Makes the target's next attack hit one of its team mates.",
+    "initiallyUnlocked": false
   }
 ]

@@ -9,6 +9,7 @@
 const PLAYER_ID = "player";
 const PLAYER_TURN = "player";
 const ENEMY_TURN = "enemy";
+const BLOCKED_TILE_TYPES = ["wall", "stone"];
 
 function copyState(gameState) {
   // Copy state before rule changes.
@@ -104,8 +105,10 @@ function makeCharacter(data, position, team) {
     statuses: {
       movementBonus: 0,
       guarded: false,
+      invulnerable: false,
       counterReady: false,
-      counterUsed: false
+      counterUsed: false,
+      confused: false
     }
   };
 }
@@ -113,10 +116,10 @@ function makeCharacter(data, position, team) {
 function chooseSpawnCells(cells, amount, randomSpawns) {
   const openCells = [];
 
-  // Non-wall start positions.
+  // Grass start positions only.
   cells.forEach((row, y) => {
     row.forEach((cell, x) => {
-      if (!cell.blocked && cell.type !== "wall") {
+      if (!isTerrainBlocked(cell)) {
         openCells.push({ x, y });
       }
     });
@@ -224,7 +227,12 @@ function isCellBlocked(gameState, x, y) {
   }
 
   const cell = gameState.board.cells[y][x];
-  return cell.blocked === true || cell.type === "wall";
+  return isTerrainBlocked(cell);
+}
+
+function isTerrainBlocked(cell) {
+  // Water and mountain tiles block movement.
+  return cell.blocked === true || BLOCKED_TILE_TYPES.includes(cell.type);
 }
 
 /**
@@ -256,7 +264,7 @@ function getDistance(a, b) {
 function getReachableCells(gameState, characterId) {
   const character = gameState.characters[characterId];
 
-  if (!character || character.defeated || character.hasMoved) {
+  if (!character || character.defeated || character.hasMoved || character.hasActed) {
     return [];
   }
 
@@ -307,8 +315,8 @@ function getEffectiveMovementRange(character) {
 function moveCharacter(gameState, characterId, targetX, targetY) {
   const character = gameState.characters[characterId];
 
-  // No movement after defeated or moved.
-  if (!character || character.defeated || character.hasMoved) {
+  // No movement after defeated, moved or acted.
+  if (!character || character.defeated || character.hasMoved || character.hasActed) {
     return gameState;
   }
 
@@ -372,6 +380,11 @@ function applyDamage(gameState, targetId, damage) {
     return false;
   }
 
+  if (target.statuses.invulnerable) {
+    target.statuses.invulnerable = false;
+    return false;
+  }
+
   const wasAlive = target.hp > 0;
   target.hp = Math.max(0, target.hp - damage);
 
@@ -381,6 +394,38 @@ function applyDamage(gameState, targetId, damage) {
   }
 
   return false;
+}
+
+function pushTargetAway(gameState, attacker, target, distance) {
+  if (target.defeated) {
+    return;
+  }
+
+  const direction = {
+    x: Math.sign(target.position.x - attacker.position.x),
+    y: Math.sign(target.position.y - attacker.position.y)
+  };
+
+  let nextPosition = { ...target.position };
+
+  for (let step = 0; step < distance; step += 1) {
+    const candidate = {
+      x: nextPosition.x + direction.x,
+      y: nextPosition.y + direction.y
+    };
+
+    if (
+      !isInsideBoard(gameState, candidate.x, candidate.y) ||
+      isCellBlocked(gameState, candidate.x, candidate.y) ||
+      isCellOccupied(gameState, candidate.x, candidate.y)
+    ) {
+      return;
+    }
+
+    nextPosition = candidate;
+  }
+
+  target.position = nextPosition;
 }
 
 function finishAction(gameState, message) {
@@ -416,6 +461,14 @@ function useSkill(gameState, characterId, skillId, target = {}) {
 
   if (skill.type === "piercing") {
     return useDamageSkill(gameState, characterId, skill, target.characterId);
+  }
+
+  if (skill.type === "knockback") {
+    return useKnockbackSkill(gameState, characterId, skill, target.characterId);
+  }
+
+  if (skill.type === "confuse") {
+    return useConfuseSkill(gameState, characterId, skill, target.characterId);
   }
 
   if (skill.type === "adjacent_area") {
@@ -464,6 +517,17 @@ function useSkill(gameState, characterId, skillId, target = {}) {
     nextState.characters[characterId].statuses.counterUsed = false;
     nextState.characters[characterId].hasActed = true;
     return addLog(nextState, `${character.name} entered Flowing Counter stance.`);
+  }
+
+  if (skill.type === "invulnerable") {
+    if (character.hasActed) {
+      return gameState;
+    }
+
+    const nextState = copyState(gameState);
+    nextState.characters[characterId].statuses.invulnerable = true;
+    nextState.characters[characterId].hasActed = true;
+    return addLog(nextState, `${character.name} used ${skill.name}.`);
   }
 
   return gameState;
@@ -515,11 +579,43 @@ function useAdjacentAreaSkill(gameState, characterId, skill) {
   return finishAction(nextState, `${nextCharacter.name} used ${skill.name}.`);
 }
 
+function useKnockbackSkill(gameState, characterId, skill, targetId) {
+  const character = gameState.characters[characterId];
+  const target = gameState.characters[targetId];
+
+  if (!target || target.defeated || character.hasActed || getDistance(character, target) > skill.range) {
+    return gameState;
+  }
+
+  const nextState = copyState(gameState);
+  const nextCharacter = nextState.characters[characterId];
+  const nextTarget = nextState.characters[targetId];
+  const damage = Math.max(1, skill.damage + nextCharacter.attack - nextTarget.defence);
+  applyDamage(nextState, targetId, damage);
+  pushTargetAway(nextState, nextCharacter, nextTarget, skill.knockback || 1);
+  nextCharacter.hasActed = true;
+  return finishAction(nextState, `${nextCharacter.name} used ${skill.name}.`);
+}
+
+function useConfuseSkill(gameState, characterId, skill, targetId) {
+  const character = gameState.characters[characterId];
+  const target = gameState.characters[targetId];
+
+  if (!target || target.defeated || character.hasActed || getDistance(character, target) > skill.range) {
+    return gameState;
+  }
+
+  const nextState = copyState(gameState);
+  nextState.characters[targetId].statuses.confused = true;
+  nextState.characters[characterId].hasActed = true;
+  return addLog(nextState, `${character.name} used ${skill.name}.`);
+}
+
 function useDashSkill(gameState, characterId, skill, target) {
   const character = gameState.characters[characterId];
 
   // Shadow Step final square check.
-  if (character.hasMoved || !target || !isInsideBoard(gameState, target.x, target.y)) {
+  if (character.hasMoved || character.hasActed || !target || !isInsideBoard(gameState, target.x, target.y)) {
     return gameState;
   }
 
@@ -585,6 +681,10 @@ function runEnemyTurn(gameState) {
 }
 
 function enemyAttackPlayer(gameState, enemyId) {
+  if (gameState.characters[enemyId].statuses.confused) {
+    return confusedEnemyAttack(gameState, enemyId);
+  }
+
   let nextState = attackCharacter(gameState, enemyId, PLAYER_ID);
   const player = nextState.characters[PLAYER_ID];
   const enemy = nextState.characters[enemyId];
@@ -598,6 +698,30 @@ function enemyAttackPlayer(gameState, enemyId) {
   }
 
   return nextState;
+}
+
+function confusedEnemyAttack(gameState, enemyId) {
+  const enemy = gameState.characters[enemyId];
+  const target = Object.values(gameState.characters)
+    .filter((character) => {
+      return character.team === enemy.team && character.id !== enemyId && !character.defeated;
+    })
+    .sort((first, second) => getDistance(enemy, first) - getDistance(enemy, second))[0];
+
+  const nextState = copyState(gameState);
+  nextState.characters[enemyId].statuses.confused = false;
+
+  if (!target) {
+    nextState.characters[enemyId].hasActed = true;
+    return addLog(nextState, `${enemy.name} was confused but found no ally to attack.`);
+  }
+
+  const nextEnemy = nextState.characters[enemyId];
+  const nextTarget = nextState.characters[target.id];
+  const damage = calculateDamage(nextEnemy, nextTarget, 0);
+  applyDamage(nextState, target.id, damage);
+  nextEnemy.hasActed = true;
+  return finishAction(nextState, `${enemy.name} attacked ${target.name} in confusion.`);
 }
 
 function moveEnemyTowardPlayer(gameState, enemyId) {

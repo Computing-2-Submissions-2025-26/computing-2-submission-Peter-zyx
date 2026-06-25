@@ -43,6 +43,28 @@
       "defence": 1,
       "movementRange": 3,
       "attackRange": 1
+    },
+    {
+      "id": "bandit_4",
+      "name": "Bandit 4",
+      "icon": "🥷",
+      "image": "./assets/characters/enemy_bandit.png",
+      "maxHp": 8,
+      "attack": 4,
+      "defence": 1,
+      "movementRange": 3,
+      "attackRange": 1
+    },
+    {
+      "id": "bandit_5",
+      "name": "Bandit 5",
+      "icon": "🥷",
+      "image": "./assets/characters/enemy_bandit.png",
+      "maxHp": 8,
+      "attack": 4,
+      "defence": 1,
+      "movementRange": 3,
+      "attackRange": 1
     }
   ]
 }
