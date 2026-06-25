@@ -187,12 +187,12 @@ h2 {
 
 .unit-sprite {
   display: block;
-  /* Larger character sprite. */
-  height: 320%;
+  /* Stable character size on different screens. */
+  height: clamp(72px, 240%, 120px);
   image-rendering: auto;
   object-fit: contain;
   pointer-events: none;
-  width: 320%;
+  width: clamp(72px, 240%, 120px);
 }
 
 .unit-moving {
